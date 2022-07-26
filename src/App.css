@@ -1,14 +1,31 @@
-main {
+@font-face {font-family: "ITC Machine"; src: url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.eot"); src: url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.eot?#iefix") format("embedded-opentype"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.woff2") format("woff2"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.woff") format("woff"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.ttf") format("truetype"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.svg#ITC Machine") format("svg"); }
+.main {
   background-color: rgb(45, 45, 119);
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: "ITC Machine";
+}
+
+
+.bslogo {
+  width: 500px;
+  margin-top: 20px;
+}
+.left {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  padding-left: 200px;
 }
 
 .axisbutton {
   margin-top: 50px;
+  width: 100px;
+}
+
+.start-game {
+  margin-top: 50px;
+  width: 100px;
 }
 
 .ship {
@@ -16,12 +33,19 @@ main {
   height: 50px;
 }
 
+
 .gridcontainer {
+  padding-left: 50px;
+  margin-top: 24%;
   display: grid;
   grid-template-rows: repeat(10, 1fr);
   grid-template-columns: repeat(10, 1fr);
   width: 500px;
   height: 500px;
+}
+
+.tileface:hover {
+  border: 2px solid rgb(255, 255, 255)100vh;
 }
 
 .tileface {
@@ -34,12 +58,27 @@ main {
   align-items: center;
   cursor: pointer;
 }
-.tileface:hover{
-  border: 1px solid rgb(0, 225, 255);
+
+.tileface.ship.shot {
+  background-color: red;
 }
-
-
 .tileface.ship {
   background-color: rgb(68, 68, 68);
+}
+
+.ship-placement {
+  padding-top: 50px;
+  font-size: 80px;
+  color: white;
+}
+
+.choosetile {
+  padding-top: 50px;
+  font-size: 80px;
+  color: white;
+}
+
+.ship-placement-ship {
+  color: rgb(194, 0, 0);
 }
 

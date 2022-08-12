@@ -62,6 +62,9 @@
 .tileface.ship.shot {
   background-color: red;
 }
+.tileface.ship.miss {
+  background-color: rgb(0, 0, 0);
+}
 .tileface.ship {
   background-color: rgb(68, 68, 68);
 }

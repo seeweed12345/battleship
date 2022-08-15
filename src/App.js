@@ -33,19 +33,25 @@ function App() {
   const [reverseShot, setReverseShot] = React.useState(false);
   const [lastShipMiss, setLastShipMiss] = React.useState(false);
   const [originalTile, setOriginalTile] = React.useState();
-  const [lastTile, setLastTile] = React.useState(null);
+  const [lastTile, setLastTile] = React.useState();
   const [hitOrMiss, setHitOrMiss] = React.useState();
   const [computerAxis, setComputerAxis] = React.useState("horizontal");
+  const [updateComputerAxis, setUpdateComputerAxis] = React.useState(false);
   const [tilesHitOnComputerTurn, setTilesHitOnComputerTurn] = React.useState(0);
   const [computerShotDirectionForward, setComputerShotDirectionForward] =
     React.useState(true);
   const [computerShotReset, setComputerShotReset] = React.useState(true);
+  const [updatedLastTile, setUpdatedLastTile] = React.useState(false);
   const [computerNeighborsMissed, setComputerNeighborsMissed] =
-    React.useState(false);
+    React.useState(0);
+  const [updatedRandomAxis, setUpdatedRandomAxis] = React.useState(false);
+  const [computerTilesToPickFromArray, setComputerTilesToPickFromArray] =
+    React.useState(Array.from(Array(100).keys()));
   const [
     updatedComputerShotDirectionForward,
     setUpdatedComputerShotDirectionForward,
   ] = React.useState(false);
+
   function newGrid() {
     const newGrid = [];
     for (let i = 0; i < 100; i++) {
@@ -321,11 +327,21 @@ function App() {
     if (!firstShot) {
       setFirstShot(true);
     }
-    console.log(tile.isShipPlaced);
+    console.log("tile hit", tile);
     currentPlayer === "player"
       ? setPlayerShotSent(true)
       : setComputerShotSent(true);
-    tile.isShipPlaced ? shipHit(tile) : shipMiss(tile);
+    if (tile.isShipPlaced) {
+      shipHit(tile);
+    } else if (!tile.isShipPlaced) {
+      shipMiss(tile);
+    }
+    if (currentPlayer === "computer") {
+      setComputerTilesToPickFromArray((prev) =>
+        prev.filter((value) => value !== Number(tile.id))
+      );
+      console.log(computerTilesToPickFromArray);
+    }
   }
 
   function resetPlayerShips() {
@@ -347,11 +363,9 @@ function App() {
       missedGrid = playerGrid;
       setGrid = setPlayerGrid;
       setShowHitPopUp(true);
-      setLastShipHit(true);
-      setLastShipMiss(false);
       console.log("hit captured");
-      setLastTile(Number(hitTile.id));
       setTilesHitOnComputerTurn((prev) => prev + 1);
+      setLastTile(Number(hitTile.id));
     }
     const newArray = missedGrid.map((computerTile) => {
       return computerTile.id === hitTile.id
@@ -376,8 +390,8 @@ function App() {
       missedGrid = playerGrid;
       setGrid = setPlayerGrid;
       setShowHitPopUp(true);
-      setLastShipMiss(true);
-      setLastShipHit(false);
+      setComputerNeighborsMissed((prev) => prev);
+      setLastTile(Number(missedTile.id));
     }
     const newArray = missedGrid.map((computerTile) => {
       return computerTile.id === missedTile.id
@@ -406,9 +420,12 @@ function App() {
     return randomTile;
   }
 
-  function getRandomTileComputer() {
-    const randomNumber = Math.floor(Math.random() * 100);
-    return randomNumber - 1;
+  function getRandomTileFromTilesToPickFromArray() {
+    let randomTile =
+      computerTilesToPickFromArray[
+        Math.floor(Math.random() * computerTilesToPickFromArray.length)
+      ];
+    return randomTile;
   }
 
   function checkIsShipPlaced(
@@ -534,27 +551,33 @@ function App() {
         return true;
       }
     };
-    const tileIsOntheTopEdge = (tileNumber) => {
-      if (tileNumber < 10) {
+    const tileIsOnTheTopEdge = (tileNumber) => {
+      if (tileNumber + 1 < 10) {
         return true;
       }
     };
     const getRandomAxis = () => {
       const axis = ["horizontal", "vertical"];
       let randomAxis = axis[Math.floor(Math.random() * axis.length)];
-      setComputerAxis(randomAxis);
+      setComputerAxis("horizontal");
     };
-    const reverseComputerShotAxis = () => {
+    const toggleComputerShotAxis = () => {
       computerAxis === "vertical"
         ? setComputerAxis("horizontal")
         : setComputerAxis("vertical");
     };
-    const reverseComputerShotDirection = () => {
-      computerShotDirectionForward
-        ? setComputerShotDirectionForward((prev) => !prev)
-        : setComputerShotDirectionForward((prev) => !prev);
+
+    const getNeighborTiles = (tileNumber) => {
+      let neighbors = {
+        neighborRight: tileNumber + 1,
+        neighborLeft: tileNumber - 1,
+        neighborUp: tileNumber - 10,
+        neighborDown: tileNumber + 10,
+      };
+
+      return neighbors;
     };
-    const getNeighborTile = (tileNumber) => {
+    const getNeighborTileAfterHit = (tileNumber) => {
       let neighbor;
       if (computerAxis === "vertical" && computerShotDirectionForward) {
         neighbor = tileNumber + 10;
@@ -567,7 +590,6 @@ function App() {
         computerShotDirectionForward
       ) {
         neighbor = tileNumber + 1;
-        console.log(neighbor);
         return neighbor;
       } else if (
         computerAxis === "horizontal" &&
@@ -578,43 +600,123 @@ function App() {
       }
     };
     const shootRandomShip = () => {
-      let randomTile = getRandomTileComputer();
+      let randomTile = getRandomTileFromTilesToPickFromArray();
       shootTile(playerGrid[randomTile]);
-      setOriginalTile(playerGrid[randomTile].id);
+      setOriginalTile(Number(playerGrid[randomTile].id));
     };
+
     const nextShot = () => {
-      if (tilesHitOnComputerTurn === 5) {
-        shootRandomShip();
-      } else if (
-        tilesHitOnComputerTurn > 1 &&
-        ((tileIsOnTheRightEdge(lastTile) && computerAxis === "horizontal") ||
-          (tileIsOnTheBottomEdge(lastTile) && computerAxis === "vertical") ||
-          (tileIsOntheTopEdge(lastTile) && computerAxis === "horizontal") ||
-          (tileIsOnTheLeftEdge(lastTile) && computerAxis === "horizontal"))
+      console.log(lastTile, "lasttile");
+      console.log("ran");
+      let neighbors = getNeighborTiles(lastTile);
+      if (
+        lastShipHit &&
+        (tileIsOnTheLeftEdge(lastTile) ||
+          tileIsOnTheRightEdge(lastTile) ||
+          tileIsOnTheBottomEdge(lastTile) ||
+          tileIsOnTheTopEdge(lastTile))
       ) {
-        shootRandomShip();
+        setComputerShotDirectionForward((prev) => !prev);
       } else if (
-        tileIsOnTheRightEdge(originalTile) ||
-        tileIsOnTheBottomEdge(originalTile) ||
-        tileIsOnTheRightEdge(lastTile) ||
-        tileIsOnTheBottomEdge(lastTile)
+        tilesHitOnComputerTurn === 5 ||
+        (tilesHitOnComputerTurn > 1 && lastShipMiss)
       ) {
-        reverseComputerShotDirection();
-        let neighbor = getNeighborTile(originalTile);
-        shootTile(playerGrid[neighbor]);
-      } else if (updatedComputerShotDirectionForward) {
         console.log("ran");
-        let neighbor = getNeighborTile(originalTile);
-        shootTile(playerGrid[neighbor]);
-        setUpdatedComputerShotDirectionForward(false);
-      } else if (lastTile === originalTile) {
-        console.log("if no lasttile");
-        let neighbor = getNeighborTile(originalTile);
-        shootTile(playerGrid[neighbor]);
-      } else if (lastTile !== originalTile) {
-        let neighbor = getNeighborTile(lastTile);
-        console.log(neighbor);
-        shootTile(playerGrid[neighbor]);
+        console.log(neighbors);
+      } else if (computerAxis === "horizontal") {
+        let randomNumber = Math.floor(Math.random() * 2);
+        let randomNeighbor;
+        randomNumber === 1
+          ? (randomNeighbor = Number(neighbors.neighborLeft))
+          : (randomNeighbor = Number(neighbors.neighborRight));
+        console.log(neighbors);
+        console.log(lastTile);
+        console.log(randomNeighbor);
+        console.log("ran");
+        console.log(neighbors);
+        if (
+          (!playerGrid[Number(neighbors.neighborLeft)].isShot ||
+            !playerGrid[Number(neighbors.neighborLeft)].isMissed) &&
+          (!playerGrid[Number(neighbors.neighborRight)].isShot ||
+            !playerGrid[Number(neighbors.neighborRight)].isMissed)
+        ) {
+          console.log("ran");
+          randomNeighbor === neighbors.neighborLeft
+            ? setComputerShotDirectionForward(true)
+            : setComputerShotDirectionForward(false);
+          shootTile(playerGrid[Number(neighbors.neighborRight)]);
+          console.log(neighbors);
+        } else if (
+          (!playerGrid[Number(neighbors.neighborLeft)].isShot ||
+            !playerGrid[Number(neighbors.neighborLeft)].isMissed) &&
+          (playerGrid[Number(neighbors.neighborRight)].isShot ||
+            playerGrid[Number(neighbors.neighborRight)].isMissed)
+        ) {
+          console.log("ran");
+          setComputerShotDirectionForward(false);
+          shootTile(playerGrid[Number(neighbors.neighborLeft)]);
+          console.log(neighbors);
+        } else if (
+          (!playerGrid[Number(neighbors.neighborRight)].isShot ||
+            !playerGrid[Number(neighbors.neighborRight)].isMissed) &&
+          (playerGrid[Number(neighbors.neighborLeft)].isShot ||
+            playerGrid[Number(neighbors.neighborLeft)].isMissed)
+        ) {
+          console.log("ran");
+          setComputerShotDirectionForward(true);
+          shootTile(playerGrid[Number(neighbors.neighborRight)]);
+          console.log(neighbors);
+        } else {
+          console.log("ran");
+          toggleComputerShotAxis();
+          nextShot();
+          console.log(neighbors);
+        }
+      } else if (computerAxis === "vertical") {
+        console.log("ran");
+        let randomNumber = Math.floor(Math.random() * 2);
+        let randomNeighbor;
+        randomNumber === 1
+          ? (randomNeighbor = Number(neighbors.neighborDown))
+          : (randomNeighbor = Number(neighbors.neighborUp));
+        console.log(neighbors);
+        console.log(lastTile);
+        console.log(randomNeighbor);
+        if (
+          (!playerGrid[Number(neighbors.neighborDown)].isShot ||
+            !playerGrid[Number(neighbors.neighborDown)].isMissed) &&
+          (!playerGrid[Number(neighbors.neighborUp)].isShot ||
+            !playerGrid[Number(neighbors.neighborUp)].isMissed)
+        ) {
+          console.log("ran");
+          randomNeighbor === neighbors.neighborDown
+            ? setComputerShotDirectionForward(true)
+            : setComputerShotDirectionForward(false);
+          shootTile(playerGrid[randomNeighbor]);
+          console.log(neighbors);
+        } else if (
+          (!playerGrid[Number(neighbors.neighborDown)].isShot ||
+            !playerGrid[Number(neighbors.neighborDown)].isMissed) &&
+          (playerGrid[Number(neighbors.neighborUp)].isShot ||
+            playerGrid[Number(neighbors.neighborUp)].isMissed)
+        ) {
+          console.log("ran");
+        } else if (
+          (!playerGrid[Number(neighbors.neighborUp)].isShot ||
+            !playerGrid[Number(neighbors.neighborUp)].isMissed) &&
+          (playerGrid[Number(neighbors.neighborDown)].isShot ||
+            playerGrid[Number(neighbors.neighborDown)].isMissed)
+        ) {
+          console.log("ran");
+          setComputerShotDirectionForward(true);
+          shootTile(playerGrid[Number(neighbors.neighborUp)]);
+          console.log(neighbors);
+        } else {
+          console.log("ran");
+          toggleComputerShotAxis();
+          nextShot();
+          console.log(neighbors);
+        }
       }
     };
     if (
@@ -624,76 +726,28 @@ function App() {
       computerShotReset &&
       !computerShotSent
     ) {
+      console.log("surprise bitches");
       getRandomAxis();
-      shootTile(playerGrid[1]);
-      setOriginalTile(Number(playerGrid[1].id));
+      setUpdatedRandomAxis(true);
+      shootTile(playerGrid[22]);
       setComputerShotReset(false);
     } else if (
       currentPlayer === "computer" &&
       playerGrid &&
       computerGrid &&
-      !computerShotSent
+      !computerShotReset &&
+      !computerShotSent &&
+      lastTile
     ) {
-      if (lastShipMiss && !updatedComputerShotDirectionForward) {
-        reverseComputerShotDirection();
-        setUpdatedComputerShotDirectionForward(true);
-      } else if (lastShipMiss && updatedComputerShotDirectionForward) {
-        nextShot();
-      } else if (!computerShotSent) {
-        nextShot();
-      }
-      // } else if (lastShipMiss && !computerShotSent) {
-      //   shootRandomShip();
-      // }
-      // } else if (currentPlayer === "computer" && playerGrid && computerGrid) {
-      //   let neighborTile;
-      //   if (Number(originalTile.id + (1 % 10) === 0) && lastShipMiss) {
-      //     if (Number(originalTile.id) < 10) {
-      //     }
-      //   } else if (
-      //     currentPlayer === "computer" &&
-      //     lastShipHit &&
-      //     !computerShotSent &&
-      //     !lastShipMiss
-      //   ) {
-      //     console.log(lastTile.id);
-      //     console.log("computer 1");
-      //     if (!reverseShot) {
-      //       neighborTile = Number(lastTile.id) + 1;
-      //     } else {
-      //       neighborTile = Number(lastTile.id) - 1;
-      //     }
-
-      //     console.log(neighborTile);
-      //     shootTile(playerGrid[neighborTile]);
-      //   } else if (
-      //     currentPlayer === "computer" &&
-      //     lastShipHit &&
-      //     lastShipMiss &&
-      //     !computerShotSent
-      //   ) {
-      //     console.log("computer 2");
-      //     if (Number(lastTile.id + 1) % 1 === 0) {
-      //       neighborTile = Number(originalTile.id) + 10;
-      //     } else {
-      //       neighborTile = Number(originalTile.id) - 1;
-      //       console.log("changed neighbor");
-      //     }
-      //     console.log(neighborTile);
-      //     shootTile(playerGrid[neighborTile]);
-      //     setReverseShot(true);
-      //   } else if (
-      //     currentPlayer === "computer" &&
-      //     !computerShotSent &&
-      //     !originalTile
-      //   ) {
-      //     shootTile(playerGrid[0]);
-      //     setOriginalTile(playerGrid[0]);
-      //   }
+      console.log("ran next shot");
+      nextShot();
     }
   }, [
     computerShotDirectionForward,
     currentPlayer,
+    computerAxis,
+    updatedRandomAxis,
+    updateComputerAxis,
     lastTile,
     lastShipHit,
     lastShipMiss,
@@ -703,7 +757,253 @@ function App() {
     originalTile,
     computerShotReset,
     updatedComputerShotDirectionForward,
+    computerTilesToPickFromArray,
+    tilesHitOnComputerTurn,
   ]);
+
+  // React.useEffect(() => {
+  //   const tileIsOnTheRightEdge = (tileNumber) => {
+  //     if ((tileNumber + 1) % 10 === 0) {
+  //       return true;
+  //     }
+  //   };
+  //   const tileIsOnTheBottomEdge = (tileNumber) => {
+  //     if (tileNumber + 1 > 90) {
+  //       return true;
+  //     }
+  //   };
+  //   const tileIsOnTheLeftEdge = (tileNumber) => {
+  //     if ((tileNumber + 10) % 10 === 0) {
+  //       return true;
+  //     }
+  //   };
+  //   const tileIsOnTheTopEdge = (tileNumber) => {
+  //     if (tileNumber + 1 < 10) {
+  //       return true;
+  //     }
+  //   };
+  //   const getRandomAxis = () => {
+  //     const axis = ["horizontal", "vertical"];
+  //     let randomAxis = axis[Math.floor(Math.random() * axis.length)];
+  //     setComputerAxis(randomAxis);
+  //   };
+  //   const reverseComputerShotAxis = () => {
+  //     computerAxis === "vertical"
+  //       ? setComputerAxis("horizontal")
+  //       : setComputerAxis("vertical");
+  //   };
+  //   const reverseComputerShotDirection = () => {
+  //     computerShotDirectionForward
+  //       ? setComputerShotDirectionForward((prev) => !prev)
+  //       : setComputerShotDirectionForward((prev) => !prev);
+  //   };
+  //   const getNeighborTile = (tileNumber) => {
+  //     let neighbor;
+  //     if (
+  //       (computerAxis === "vertical" && computerShotDirectionForward) ||
+  //       (tileIsOnTheTopEdge(originalTile) && computerAxis === "vertical")
+  //     ) {
+  //       neighbor = tileNumber + 10;
+  //       return neighbor;
+  //     } else if (
+  //       computerAxis === "vertical" &&
+  //       !computerShotDirectionForward &&
+  //       !tileIsOnTheTopEdge(originalTile)
+  //     ) {
+  //       console.log("this ran");
+  //       neighbor = tileNumber - 10;
+  //       return neighbor;
+  //     } else if (
+  //       computerAxis === "horizontal" &&
+  //       computerShotDirectionForward
+  //     ) {
+  //       neighbor = tileNumber + 1;
+  //       console.log(neighbor);
+  //       return neighbor;
+  //     } else if (
+  //       computerAxis === "horizontal" &&
+  //       !computerShotDirectionForward
+  //     ) {
+  //       neighbor = tileNumber - 1;
+  //       return neighbor;
+  //     }
+  //   };
+  //   const shootRandomShip = () => {
+  //     let randomTile = getRandomTileFromTilesToPickFromArray();
+  //     shootTile(playerGrid[randomTile]);
+  //     setOriginalTile(Number(playerGrid[randomTile].id));
+  //   };
+  //   const nextShot = () => {
+  //     console.log(tilesHitOnComputerTurn);
+  //     console.log(lastShipMiss);
+  //     if (
+  //       tilesHitOnComputerTurn === 5 ||
+  //       (tilesHitOnComputerTurn > 1 && lastShipMiss)
+  //     ) {
+  //       setComputerShotReset(true);
+  //       shootRandomShip();
+  //     } else if (
+  //       (updatedComputerShotDirectionForward && lastShipMiss) ||
+  //       (updateComputerAxis && lastShipMiss && tilesHitOnComputerTurn === 1)
+  //     ) {
+  //       console.log("ran");
+  //       let neighbor = getNeighborTile(originalTile);
+  //       console.log(originalTile);
+  //       console.log(neighbor, "neighbor");
+  //       shootTile(playerGrid[neighbor]);
+  //       setUpdatedComputerShotDirectionForward(false);
+  //       setUpdateComputerAxis(false);
+  //     } else if (lastTile === originalTile) {
+  //       console.log("if no lasttile");
+  //       let neighbor = getNeighborTile(originalTile);
+  //       shootTile(playerGrid[neighbor]);
+  //     } else if (lastTile !== originalTile) {
+  //       console.log("not equal to last");
+  //       let neighbor = getNeighborTile(lastTile);
+  //       console.log(neighbor);
+  //       shootTile(playerGrid[neighbor]);
+  //     }
+  //   };
+  //   if (
+  //     currentPlayer === "computer" &&
+  //     playerGrid &&
+  //     computerGrid &&
+  //     computerShotReset &&
+  //     !computerShotSent
+  //   ) {
+  //     getRandomAxis();
+  //     shootTile(playerGrid[1]);
+  //     setOriginalTile(Number(playerGrid[1].id));
+  //     setComputerShotReset(false);
+  //     setTilesHitOnComputerTurn(0);
+  //   } else if (
+  //     currentPlayer === "computer" &&
+  //     playerGrid &&
+  //     computerGrid &&
+  //     !computerShotSent
+  //   ) {
+  //     console.log(lastShipMiss);
+  //     console.log(tileIsOnTheRightEdge(originalTile));
+  //     console.log(computerAxis);
+  //     if (
+  //       playerGrid &&
+  //       !updateComputerAxis &&
+  //       lastShipMiss &&
+  //       tileIsOnTheRightEdge(originalTile) &&
+  //       computerAxis === "horizontal"
+  //     ) {
+  //       reverseComputerShotAxis();
+  //       setUpdateComputerAxis(true);
+  //       console.log("update axis");
+  //     } else if (
+  //       (lastShipMiss &&
+  //         tileIsOnTheTopEdge(originalTile) &&
+  //         tileIsOnTheLeftEdge(originalTile)) ||
+  //       (tileIsOnTheTopEdge(originalTile) &&
+  //         tileIsOnTheRightEdge(originalTile)) ||
+  //       (tileIsOnTheBottomEdge(originalTile) &&
+  //         tileIsOnTheLeftEdge(originalTile)) ||
+  //       (tileIsOnTheBottomEdge(originalTile) &&
+  //         tileIsOnTheRightEdge(originalTile))
+  //     ) {
+  //       reverseComputerShotAxis();
+  //       setUpdateComputerAxis(true);
+  //     } else if (playerGrid && updateComputerAxis) {
+  //       nextShot();
+  //       console.log("updated axis confirmed");
+  //     } else if (
+  //       playerGrid &&
+  //       !updatedComputerShotDirectionForward &&
+  //       ((tileIsOnTheRightEdge(originalTile) &&
+  //         computerAxis === "horizontal") ||
+  //         tileIsOnTheBottomEdge(originalTile) ||
+  //         tileIsOnTheRightEdge(lastTile) ||
+  //         tileIsOnTheBottomEdge(lastTile))
+  //     ) {
+  //       reverseComputerShotDirection();
+  //       setUpdatedComputerShotDirectionForward(true);
+  //     } else if (
+  //       playerGrid &&
+  //       lastShipMiss &&
+  //       !updatedComputerShotDirectionForward
+  //     ) {
+  //       reverseComputerShotDirection();
+  //       setUpdatedComputerShotDirectionForward(true);
+  //     } else if (
+  //       playerGrid &&
+  //       lastShipMiss &&
+  //       updatedComputerShotDirectionForward
+  //     ) {
+  //       nextShot();
+  //     } else if (!computerShotSent) {
+  //       nextShot();
+  //     }
+  //     // } else if (lastShipMiss && !computerShotSent) {
+  //     //   shootRandomShip();
+  //     // }
+  //     // } else if (currentPlayer === "computer" && playerGrid && computerGrid) {
+  //     //   let neighborTile;
+  //     //   if (Number(originalTile.id + (1 % 10) === 0) && lastShipMiss) {
+  //     //     if (Number(originalTile.id) < 10) {
+  //     //     }
+  //     //   } else if (
+  //     //     currentPlayer === "computer" &&
+  //     //     lastShipHit &&
+  //     //     !computerShotSent &&
+  //     //     !lastShipMiss
+  //     //   ) {
+  //     //     console.log(lastTile.id);
+  //     //     console.log("computer 1");
+  //     //     if (!reverseShot) {
+  //     //       neighborTile = Number(lastTile.id) + 1;
+  //     //     } else {
+  //     //       neighborTile = Number(lastTile.id) - 1;
+  //     //     }
+
+  //     //     console.log(neighborTile);
+  //     //     shootTile(playerGrid[neighborTile]);
+  //     //   } else if (
+  //     //     currentPlayer === "computer" &&
+  //     //     lastShipHit &&
+  //     //     lastShipMiss &&
+  //     //     !computerShotSent
+  //     //   ) {
+  //     //     console.log("computer 2");
+  //     //     if (Number(lastTile.id + 1) % 1 === 0) {
+  //     //       neighborTile = Number(originalTile.id) + 10;
+  //     //     } else {
+  //     //       neighborTile = Number(originalTile.id) - 1;
+  //     //       console.log("changed neighbor");
+  //     //     }
+  //     //     console.log(neighborTile);
+  //     //     shootTile(playerGrid[neighborTile]);
+  //     //     setReverseShot(true);
+  //     //   } else if (
+  //     //     currentPlayer === "computer" &&
+  //     //     !computerShotSent &&
+  //     //     !originalTile
+  //     //   ) {
+  //     //     shootTile(playerGrid[0]);
+  //     //     setOriginalTile(playerGrid[0]);
+  //     //   }
+  //   }
+  // }, [
+  //   computerShotDirectionForward,
+  //   currentPlayer,
+  //   computerAxis,
+  //   updateComputerAxis,
+  //   lastTile,
+  //   lastShipHit,
+  //   lastShipMiss,
+  //   computerShotSent,
+  //   playerGrid,
+  //   computerGrid,
+  //   originalTile,
+  //   computerShotReset,
+  //   updatedComputerShotDirectionForward,
+  //   computerTilesToPickFromArray,
+  //   tilesHitOnComputerTurn,
+  // ]);
 
   // React.useEffect(() => {
   //   const lasTileIsOnTheRightEdge = (tile) => {

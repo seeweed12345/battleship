@@ -2,7 +2,9 @@ import React from "react";
 
 export default function Tile(props) {
   let shipTypeHover;
-  if (props.isMissed === true) {
+  if (props.isLastTile === props.id) {
+    shipTypeHover = "tileface ship last";
+  } else if (props.isMissed === true) {
     shipTypeHover = "tileface ship miss";
   } else if (props.isShipPlaced === true && !props.isShot) {
     shipTypeHover = "tileface ship";

@@ -8,6 +8,26 @@ import ComputerTile from "./components/ComputerTile";
 import HitPopUp from "./components/HitPopUp";
 
 function App() {
+  const [destroyerTilesHit, setDestroyerTilesHit] = React.useState({
+    computer: 0,
+    player: 0,
+  });
+  const [submarineTilesHit, setSubmarineTilesHit] = React.useState({
+    computer: 0,
+    player: 0,
+  });
+  const [cruiserTilesHit, setCruiserTilesHit] = React.useState({
+    computer: 0,
+    player: 0,
+  });
+  const [battleshipTilesHit, setBattleshipTilesHit] = React.useState({
+    computer: 0,
+    player: 0,
+  });
+  const [carrierTilesHit, setCarrierTilesHit] = React.useState({
+    computer: 0,
+    player: 0,
+  });
   const [playerGrid, setPlayerGrid] = React.useState(newGrid());
   const [computerGrid, setComputerGrid] = useCallbackState(newGrid());
   const [displayGrid, setDisplayGrid] = React.useState();
@@ -17,8 +37,27 @@ function App() {
   const [allShipsPlaced, setAllShipsPlaced] = React.useState(false);
   const [confirmAllShipsPlaced, setConfirmAllShipsPlaced] =
     React.useState(false);
+  const [shipsSunk, setShipsSunk] = React.useState({
+    player: {
+      destroyer: false,
+      submarine: false,
+      cruiser: false,
+      battleship: false,
+      carrier: false,
+    },
+    computer: {
+      destroyer: false,
+      submarine: false,
+      cruiser: false,
+      battleship: false,
+      carrier: false,
+    },
+  });
+  const [sunkSubmarine, setSunkSubmarine] = React.useState(false);
   const [allComputerShipsPlaced, setAllComputerShipsPlaced] =
     React.useState(false);
+  const [lastShotSunk, setLastShotSunk] = React.useState(false);
+  const [d, setUpdatedLastShotSunk] = React.useState(false);
   // const [alreadyPlacedTiles, setAlreadyPlacedTiles] = React.useState([]);
   const [currentShip, setCurrentShip] = React.useState("destroyer");
   const [computerShipsPlaced, setComputerShipsPlaced] = React.useState(0);
@@ -30,7 +69,8 @@ function App() {
   const [playerShotSent, setPlayerShotSent] = React.useState(false);
   const [firstShot, setFirstShot] = React.useState(false);
   const [lastShipHit, setLastShipHit] = React.useState(false);
-  const [reverseShotDirection, setReverseShotDirection] = React.useState(false);
+  const [lastShipSunk, setLastShipSunk] = React.useState("none");
+  const [lastShipWasSunk, setLastShipWasSunk] = React.useState("none");
   const [lastShipMiss, setLastShipMiss] = React.useState(false);
   const [originalTile, setOriginalTile] = React.useState();
   const [lastTile, setLastTile] = React.useState();
@@ -39,11 +79,10 @@ function App() {
   const [computerAxis, setComputerAxis] = React.useState("horizontal");
   const [updatedComputerAxis, setUpdatedComputerAxis] = React.useState(false);
   const [tilesHitOnComputerTurn, setTilesHitOnComputerTurn] = React.useState(0);
-  const [computerShotDirectionForward, setComputerShotDirectionForward] =
-    React.useState(true);
+  const [winner, setWinner] = React.useState("none");
+  const [updatedWinner, setUpdatedWinner] = React.useState(false);
   const [computerShotReset, setComputerShotReset] = React.useState(true);
   const [updatedLastTile, setUpdatedLastTile] = React.useState(false);
-  const [edgeHitTile, setEdgeHitTile] = React.useState();
   const [computerNeighborsMissed, setComputerNeighborsMissed] =
     React.useState(0);
   const [verticalComputerNeighborsMissed, setVerticalComputerNeighborsMissed] =
@@ -52,14 +91,8 @@ function App() {
     horizontalComputerNeighborsMissed,
     setHorizontalComputerNeighborsMissed,
   ] = React.useState(0);
-  const [updatedRandomAxis, setUpdatedRandomAxis] = React.useState(false);
-  const [updatedEdgeHitTile, setUpdatedEdgeHitTile] = React.useState(false);
   const [computerTilesToPickFromArray, setComputerTilesToPickFromArray] =
     React.useState(Array.from(Array(100).keys()));
-  const [
-    updatedComputerShotDirectionForward,
-    setUpdatedComputerShotDirectionForward,
-  ] = React.useState(false);
 
   function newGrid() {
     const newGrid = [];
@@ -333,10 +366,12 @@ function App() {
   }
 
   function shootTile(tile) {
+    if (tile.isMissed || tile.isShot) {
+      return;
+    }
     if (!firstShot) {
       setFirstShot(true);
     }
-    console.log("tile hit", tile);
     currentPlayer === "player"
       ? setPlayerShotSent(true)
       : setComputerShotSent(true);
@@ -349,7 +384,6 @@ function App() {
       setComputerTilesToPickFromArray((prev) =>
         prev.filter((value) => value !== Number(tile.id))
       );
-      console.log(computerTilesToPickFromArray);
     }
   }
 
@@ -366,13 +400,87 @@ function App() {
       setHitOrMiss("hit");
       missedGrid = computerGrid;
       setGrid = setComputerGrid;
+      if (hitTile.shipType === "destroyer") {
+        setDestroyerTilesHit((prev) => {
+          return {
+            ...prev,
+            player: destroyerTilesHit.player + 1,
+          };
+        });
+      } else if (hitTile.shipType === "submarine") {
+        setSubmarineTilesHit((prev) => {
+          return {
+            ...prev,
+            player: submarineTilesHit.player + 1,
+          };
+        });
+      } else if (hitTile.shipType === "cruiser") {
+        setCruiserTilesHit((prev) => {
+          return {
+            ...prev,
+            player: cruiserTilesHit.player + 1,
+          };
+        });
+      } else if (hitTile.shipType === "battleship") {
+        setBattleshipTilesHit((prev) => {
+          return {
+            ...prev,
+            player: battleshipTilesHit.player + 1,
+          };
+        });
+      } else if (hitTile.shipType === "carrier") {
+        setCarrierTilesHit((prev) => {
+          return {
+            ...prev,
+            player: carrierTilesHit.player + 1,
+          };
+        });
+      }
+
       setShowHitPopUp(true);
     } else if (currentPlayer === "computer") {
       setHitOrMiss("hit");
       missedGrid = playerGrid;
       setGrid = setPlayerGrid;
+      if (hitTile.shipType === "destroyer") {
+        setDestroyerTilesHit((prev) => {
+          return {
+            ...prev,
+            computer: destroyerTilesHit.computer + 1,
+          };
+        });
+      } else if (hitTile.shipType === "submarine") {
+        setSubmarineTilesHit((prev) => {
+          return {
+            ...prev,
+            computer: submarineTilesHit.computer + 1,
+          };
+        });
+      } else if (hitTile.shipType === "cruiser") {
+        setCruiserTilesHit((prev) => {
+          return {
+            ...prev,
+            computer: cruiserTilesHit.computer + 1,
+          };
+        });
+      } else if (hitTile.shipType === "battleship") {
+        setBattleshipTilesHit((prev) => {
+          return {
+            ...prev,
+            computer: battleshipTilesHit.computer + 1,
+          };
+        });
+      } else if (hitTile.shipType === "carrier") {
+        setCarrierTilesHit((prev) => {
+          return {
+            ...prev,
+            computer: carrierTilesHit.computer + 1,
+          };
+        });
+      }
+
       setShowHitPopUp(true);
-      console.log("hit captured");
+
       setTilesHitOnComputerTurn((prev) => prev + 1);
       setLastShipHit(true);
       setLastShipMiss(false);
@@ -553,6 +661,130 @@ function App() {
     hitOrMiss,
   ]);
   React.useEffect(() => {
+    console.log(updatedWinner);
+    console.log(winner);
+    let shipSunkByCurrentPlayer;
+    currentPlayer === "player"
+      ? (shipSunkByCurrentPlayer = shipsSunk.player)
+      : (shipSunkByCurrentPlayer = shipsSunk.computer);
+    console.log(shipSunkByCurrentPlayer);
+    if (
+      !updatedWinner &&
+      shipSunkByCurrentPlayer.destroyer &&
+      shipSunkByCurrentPlayer.submarine &&
+      shipSunkByCurrentPlayer.cruiser &&
+      shipSunkByCurrentPlayer.battleship &&
+      shipSunkByCurrentPlayer.carrier
+    ) {
+      setWinner(currentPlayer);
+      setUpdatedWinner(true);
+    }
+  }, [shipsSunk, updatedWinner, currentPlayer, winner]);
+  React.useEffect(() => {
+    console.log(lastShipSunk);
+    console.log(currentPlayer);
+    console.log(destroyerTilesHit.computer);
+    console.log(shipsSunk.computer.destroyer);
+    if (currentPlayer === "player") {
+      if (!shipsSunk.player.destroyer && destroyerTilesHit.player === 2) {
+        setLastShipSunk("destroyer");
+        let newObj = {
+          ...shipsSunk,
+          player: { ...shipsSunk.player, destroyer: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.player.submarine && submarineTilesHit.player === 3) {
+        setLastShipSunk("submarine");
+        let newObj = {
+          ...shipsSunk,
+          player: { ...shipsSunk.player, submarine: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.player.cruiser && cruiserTilesHit.player === 3) {
+        setLastShipSunk("cruiser");
+        let newObj = {
+          ...shipsSunk,
+          player: { ...shipsSunk.player, cruiser: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.player.battleship && battleshipTilesHit.player === 4) {
+        setLastShipSunk("battleship");
+        let newObj = {
+          ...shipsSunk,
+          player: { ...shipsSunk.player, battleship: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.player.carrier && carrierTilesHit.player === 5) {
+        setLastShipSunk("carrier");
+        let newObj = {
+          ...shipsSunk,
+          player: { ...shipsSunk.player, carrier: true },
+        };
+        setShipsSunk(newObj);
+      }
+    }
+    if (currentPlayer === "computer") {
+      if (!shipsSunk.computer.destroyer && destroyerTilesHit.computer === 2) {
+        setLastShipSunk("destroyer");
+        setLastShipWasSunk(true);
+        let newObj = {
+          ...shipsSunk,
+          computer: { ...shipsSunk.computer, destroyer: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.computer.submarine && submarineTilesHit.computer === 3) {
+        setLastShipSunk("submarine");
+        setLastShipWasSunk(true);
+        let newObj = {
+          ...shipsSunk,
+          computer: { ...shipsSunk.computer, submarine: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.computer.cruiser && cruiserTilesHit.computer === 3) {
+        setLastShipSunk("cruiser");
+        setLastShipWasSunk(true);
+        let newObj = {
+          ...shipsSunk,
+          computer: { ...shipsSunk.computer, cruiser: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.computer.battleship && battleshipTilesHit.computer === 4) {
+        setLastShipSunk("battleship");
+        setLastShipWasSunk(true);
+        let newObj = {
+          ...shipsSunk,
+          computer: { ...shipsSunk.computer, battleship: true },
+        };
+        setShipsSunk(newObj);
+      }
+      if (!shipsSunk.computer.carrier && carrierTilesHit.computer === 5) {
+        setLastShipSunk("carrier");
+        setLastShipWasSunk(true);
+        let newObj = {
+          ...shipsSunk,
+          computer: { ...shipsSunk.computer, carrier: true },
+        };
+        setShipsSunk(newObj);
+      }
+    }
+  }, [
+    lastShipSunk,
+    destroyerTilesHit,
+    submarineTilesHit,
+    cruiserTilesHit,
+    battleshipTilesHit,
+    carrierTilesHit,
+    shipsSunk,
+    currentPlayer,
+  ]);
+  React.useEffect(() => {
     const tileIsOnTheRightEdge = (tileNumber) => {
       if ((tileNumber + 1) % 10 === 0) {
         return true;
@@ -602,7 +834,7 @@ function App() {
     const getRandomAxis = () => {
       const axis = ["horizontal", "vertical"];
       let randomAxis = axis[Math.floor(Math.random() * axis.length)];
-      setComputerAxis("horizontal");
+      return randomAxis;
     };
     const toggleComputerShotAxis = () => {
       computerAxis === "vertical"
@@ -610,14 +842,9 @@ function App() {
         : setComputerAxis("vertical");
     };
 
-    const toggleComputerShotDirectionForward = () => {
-      computerShotDirectionForward
-        ? setComputerShotDirectionForward(false)
-        : setComputerShotDirectionForward(true);
-    };
-
     const getNeighborTiles = (tileNumber) => {
       let neighbors;
+
       if (tileIsOnTheTopLeftEdge(tileNumber)) {
         neighbors = {
           neighborRight: tileNumber + 1,
@@ -629,6 +856,13 @@ function App() {
         neighbors = {
           neighborRight: tileNumber - 1,
           neighborLeft: tileNumber - 1,
+          neighborUp: tileNumber + 10,
+          neighborDown: tileNumber + 10,
+        };
+      } else if (tileIsOnTheTopLeftEdge(tileNumber)) {
+        neighbors = {
+          neighborRight: tileNumber + 1,
+          neighborLeft: tileNumber + 1,
           neighborUp: tileNumber + 10,
           neighborDown: tileNumber + 10,
         };
@@ -645,13 +879,6 @@ function App() {
           neighborLeft: tileNumber - 1,
           neighborUp: tileNumber - 10,
           neighborDown: tileNumber - 10,
-        };
-      } else if (tileIsOnTheTopEdge(tileNumber)) {
-        neighbors = {
-          neighborRight: tileNumber + 1,
-          neighborLeft: tileNumber - 1,
-          neighborUp: tileNumber + 10,
-          neighborDown: tileNumber + 10,
         };
       } else if (tileIsOnTheBottomEdge(tileNumber)) {
         neighbors = {
@@ -684,130 +911,75 @@ function App() {
       }
       return neighbors;
     };
-    const getNeighborTileAfterHit = (tileNumber) => {
-      let neighbor;
-      if (computerAxis === "vertical" && computerShotDirectionForward) {
-        neighbor = tileNumber + 10;
-        return neighbor;
-      } else if (computerAxis === "vertical" && !computerShotDirectionForward) {
-        neighbor = tileNumber - 10;
-        return neighbor;
-      } else if (
-        computerAxis === "horizontal" &&
-        computerShotDirectionForward
-      ) {
-        neighbor = tileNumber + 1;
-        return neighbor;
-      } else if (
-        computerAxis === "horizontal" &&
-        !computerShotDirectionForward
-      ) {
-        neighbor = tileNumber - 1;
-        return neighbor;
-      }
-    };
     const shootRandomShip = () => {
       getRandomAxis();
       let randomTile = getRandomTileFromTilesToPickFromArray();
-      setOriginalTile(Number(playerGrid[randomTile].id));
+      setOriginalTile(randomTile);
+      setLastShipWasSunk(false);
       setComputerNeighborsMissed(0);
       setTilesHitOnComputerTurn(0);
       setHorizontalComputerNeighborsMissed(0);
       setVerticalComputerNeighborsMissed(0);
       setUpdatedComputerAxis(false);
       setUpdatedLastTile(false);
-      setEdgeHitTile(null);
-      setUpdatedEdgeHitTile(false);
       shootTile(playerGrid[randomTile]);
-      console.log(randomTile);
     };
 
     const nextShot = () => {
-      console.log(lastTile, "lasttile");
-      console.log("ran");
       let neighbors = getNeighborTiles(lastTile);
-      let neighborsEdge = getNeighborTiles(edgeHitTile);
-      let neighborsLastHit = getNeighborTiles(lastHitTile);
-      console.log(tilesHitOnComputerTurn);
-      console.log(computerNeighborsMissed);
       if (computerAxis === "horizontal") {
         let randomNumber = Math.floor(Math.random() * 2);
         let randomNeighbor;
         randomNumber === 1
           ? (randomNeighbor = Number(neighbors.neighborLeft))
           : (randomNeighbor = Number(neighbors.neighborRight));
-        console.log(neighbors);
-        console.log(lastTile);
-        console.log(randomNeighbor);
-        console.log("ran");
-        console.log(neighbors);
-        console.log("original", originalTile);
-        console.log("last", lastTile);
 
         if (
           (lastShipMiss && tilesHitOnComputerTurn === 0) ||
           (tilesHitOnComputerTurn > 1 &&
-            horizontalComputerNeighborsMissed === 2)
+            horizontalComputerNeighborsMissed === 2) ||
+          tilesHitOnComputerTurn === 5 ||
+          lastShipWasSunk
         ) {
-          console.log(edgeHitTile);
-          console.log(neighborsEdge);
-          console.log("ran");
           shootRandomShip();
-          console.log(lastHitTile);
-          console.log();
         } else if (
           !playerGrid[Number(neighbors.neighborLeft)].isShot &&
           !playerGrid[Number(neighbors.neighborLeft)].isMissed &&
           !playerGrid[Number(neighbors.neighborRight)].isShot &&
           !playerGrid[Number(neighbors.neighborRight)].isMissed
         ) {
-          console.log("ran");
-          randomNeighbor === neighbors.neighborLeft
-            ? setComputerShotDirectionForward(true)
-            : setComputerShotDirectionForward(false);
-          shootTile(playerGrid[Number(neighbors.neighborRight)]);
-          console.log(neighbors);
+          shootTile(playerGrid[randomNeighbor]);
         } else if (
           !playerGrid[Number(neighbors.neighborLeft)].isShot &&
           !playerGrid[Number(neighbors.neighborLeft)].isMissed &&
           (playerGrid[Number(neighbors.neighborRight)].isShot ||
             playerGrid[Number(neighbors.neighborRight)].isMissed)
         ) {
-          console.log("ran");
-          setComputerShotDirectionForward(false);
           shootTile(playerGrid[Number(neighbors.neighborLeft)]);
-          console.log(neighbors);
         } else if (
           !playerGrid[Number(neighbors.neighborRight)].isShot &&
           !playerGrid[Number(neighbors.neighborRight)].isMissed &&
           (playerGrid[Number(neighbors.neighborLeft)].isShot ||
             playerGrid[Number(neighbors.neighborLeft)].isMissed)
         ) {
-          console.log("ran");
-          setComputerShotDirectionForward(true);
           shootTile(playerGrid[Number(neighbors.neighborRight)]);
-          console.log(neighbors);
         } else {
-          console.log("ran");
           shootRandomShip();
         }
       } else if (computerAxis === "vertical") {
-        console.log("ran");
         let randomNumber = Math.floor(Math.random() * 2);
         let randomNeighbor;
         randomNumber === 1
           ? (randomNeighbor = Number(neighbors.neighborDown))
           : (randomNeighbor = Number(neighbors.neighborUp));
-        console.log(neighbors);
-        console.log(lastTile);
-        console.log(randomNeighbor);
+
         if (
           (lastShipMiss && tilesHitOnComputerTurn === 0) ||
-          (tilesHitOnComputerTurn > 1 && verticalComputerNeighborsMissed === 2)
+          (tilesHitOnComputerTurn > 1 &&
+            verticalComputerNeighborsMissed === 2) ||
+          tilesHitOnComputerTurn === 5 ||
+          lastShipWasSunk
         ) {
-          console.log(edgeHitTile);
-          console.log(neighborsEdge);
-          console.log("ran");
           shootRandomShip();
         } else if (
           !playerGrid[Number(neighbors.neighborDown)].isShot &&
@@ -815,42 +987,33 @@ function App() {
           !playerGrid[Number(neighbors.neighborUp)].isShot &&
           !playerGrid[Number(neighbors.neighborUp)].isMissed
         ) {
-          console.log("ran");
-          randomNeighbor === neighbors.neighborDown
-            ? setComputerShotDirectionForward(true)
-            : setComputerShotDirectionForward(false);
           shootTile(playerGrid[randomNeighbor]);
-          console.log(neighbors);
         } else if (
           !playerGrid[Number(neighbors.neighborDown)].isShot &&
           !playerGrid[Number(neighbors.neighborDown)].isMissed &&
           (playerGrid[Number(neighbors.neighborUp)].isShot ||
             playerGrid[Number(neighbors.neighborUp)].isMissed)
         ) {
-          console.log("ran");
-          setComputerShotDirectionForward(false);
           shootTile(playerGrid[Number(neighbors.neighborDown)]);
-          console.log(neighbors);
         } else if (
           !playerGrid[Number(neighbors.neighborUp)].isShot &&
           !playerGrid[Number(neighbors.neighborUp)].isMissed &&
           (playerGrid[Number(neighbors.neighborDown)].isShot ||
             playerGrid[Number(neighbors.neighborDown)].isMissed)
         ) {
-          console.log("ran");
-          setComputerShotDirectionForward(true);
           shootTile(playerGrid[Number(neighbors.neighborUp)]);
           console.log(neighbors);
         } else {
-          console.log("ran");
           shootRandomShip();
         }
       }
     };
-    const neighbors = getNeighborTiles(lastTile);
     const neighborsOriginal = getNeighborTiles(originalTile);
     const neighborsLastHit = getNeighborTiles(lastHitTile);
-
+    console.log(neighborsOriginal);
+    if (winner !== "none") {
+      return;
+    }
     if (
       currentPlayer === "computer" &&
       playerGrid &&
@@ -871,7 +1034,6 @@ function App() {
           (playerGrid[Number(neighborsOriginal.neighborUp)].isShot ||
             playerGrid[Number(neighborsOriginal.neighborUp)].isMissed)))
     ) {
-      console.log("ran");
       nextShot();
     } else if (
       currentPlayer === "computer" &&
@@ -892,8 +1054,6 @@ function App() {
           (playerGrid[Number(neighborsOriginal.neighborUp)].isShot ||
             playerGrid[Number(neighborsOriginal.neighborUp)].isMissed)))
     ) {
-      console.log(computerAxis);
-      console.log("this shite ran");
       setLastTile(originalTile);
       setUpdatedLastTile(true);
       toggleComputerShotAxis();
@@ -929,7 +1089,6 @@ function App() {
             (playerGrid[Number(neighborsLastHit.neighborDown)].isMissed ||
               playerGrid[Number(neighborsLastHit.neighborUp)].isMissed))))
     ) {
-      console.log("this actually ran");
       setLastTile(originalTile);
       setUpdatedLastTile(true);
     } else if (
@@ -940,7 +1099,6 @@ function App() {
       !computerShotSent &&
       lastTile === originalTile
     ) {
-      console.log("this actually ran");
       nextShot();
     } else if (
       currentPlayer === "computer" &&
@@ -949,10 +1107,7 @@ function App() {
       computerShotReset &&
       !computerShotSent
     ) {
-      console.log("surprise bitches");
-      shootTile(playerGrid[22]);
-      setOriginalTile(22);
-      setLastTile(22);
+      shootRandomShip();
       setComputerShotReset(false);
     } else if (
       currentPlayer === "computer" &&
@@ -962,365 +1117,36 @@ function App() {
       !computerShotSent &&
       lastTile
     ) {
-      console.log("ran");
       nextShot();
     }
   }, [
+    originalTile,
     updatedLastTile,
     tilesHitOnComputerTurn,
     computerNeighborsMissed,
     originalTile,
-    computerShotDirectionForward,
     currentPlayer,
     computerAxis,
-    updatedRandomAxis,
     updatedComputerAxis,
     lastTile,
     lastShipHit,
     lastShipMiss,
     computerShotSent,
     playerGrid,
+    destroyerTilesHit,
     computerGrid,
+    winner,
+    lastShipWasSunk,
     horizontalComputerNeighborsMissed,
     verticalComputerNeighborsMissed,
-    originalTile,
     computerShotReset,
-    updatedComputerShotDirectionForward,
     computerTilesToPickFromArray,
+    submarineTilesHit,
+    cruiserTilesHit,
+    battleshipTilesHit,
+    carrierTilesHit,
   ]);
 
-  // React.useEffect(() => {
-  //   const tileIsOnTheRightEdge = (tileNumber) => {
-  //     if ((tileNumber + 1) % 10 === 0) {
-  //       return true;
-  //     }
-  //   };
-  //   const tileIsOnTheBottomEdge = (tileNumber) => {
-  //     if (tileNumber + 1 > 90) {
-  //       return true;
-  //     }
-  //   };
-  //   const tileIsOnTheLeftEdge = (tileNumber) => {
-  //     if ((tileNumber + 10) % 10 === 0) {
-  //       return true;
-  //     }
-  //   };
-  //   const tileIsOnTheTopEdge = (tileNumber) => {
-  //     if (tileNumber + 1 < 10) {
-  //       return true;
-  //     }
-  //   };
-  //   const getRandomAxis = () => {
-  //     const axis = ["horizontal", "vertical"];
-  //     let randomAxis = axis[Math.floor(Math.random() * axis.length)];
-  //     setComputerAxis(randomAxis);
-  //   };
-  //   const reverseComputerShotAxis = () => {
-  //     computerAxis === "vertical"
-  //       ? setComputerAxis("horizontal")
-  //       : setComputerAxis("vertical");
-  //   };
-  //   const reverseComputerShotDirection = () => {
-  //     computerShotDirectionForward
-  //       ? setComputerShotDirectionForward((prev) => !prev)
-  //       : setComputerShotDirectionForward((prev) => !prev);
-  //   };
-  //   const getNeighborTile = (tileNumber) => {
-  //     let neighbor;
-  //     if (
-  //       (computerAxis === "vertical" && computerShotDirectionForward) ||
-  //       (tileIsOnTheTopEdge(originalTile) && computerAxis === "vertical")
-  //     ) {
-  //       neighbor = tileNumber + 10;
-  //       return neighbor;
-  //     } else if (
-  //       computerAxis === "vertical" &&
-  //       !computerShotDirectionForward &&
-  //       !tileIsOnTheTopEdge(originalTile)
-  //     ) {
-  //       console.log("this ran");
-  //       neighbor = tileNumber - 10;
-  //       return neighbor;
-  //     } else if (
-  //       computerAxis === "horizontal" &&
-  //       computerShotDirectionForward
-  //     ) {
-  //       neighbor = tileNumber + 1;
-  //       console.log(neighbor);
-  //       return neighbor;
-  //     } else if (
-  //       computerAxis === "horizontal" &&
-  //       !computerShotDirectionForward
-  //     ) {
-  //       neighbor = tileNumber - 1;
-  //       return neighbor;
-  //     }
-  //   };
-  //   const shootRandomShip = () => {
-  //     let randomTile = getRandomTileFromTilesToPickFromArray();
-  //     shootTile(playerGrid[randomTile]);
-  //     setOriginalTile(Number(playerGrid[randomTile].id));
-  //   };
-  //   const nextShot = () => {
-  //     console.log(tilesHitOnComputerTurn);
-  //     console.log(lastShipMiss);
-  //     if (
-  //       tilesHitOnComputerTurn === 5 ||
-  //       (tilesHitOnComputerTurn > 1 && lastShipMiss)
-  //     ) {
-  //       setComputerShotReset(true);
-  //       shootRandomShip();
-  //     } else if (
-  //       (updatedComputerShotDirectionForward && lastShipMiss) ||
-  //       (updateComputerAxis && lastShipMiss && tilesHitOnComputerTurn === 1)
-  //     ) {
-  //       console.log("ran");
-  //       let neighbor = getNeighborTile(originalTile);
-  //       console.log(originalTile);
-  //       console.log(neighbor, "neighbor");
-  //       shootTile(playerGrid[neighbor]);
-  //       setUpdatedComputerShotDirectionForward(false);
-  //       setUpdateComputerAxis(false);
-  //     } else if (lastTile === originalTile) {
-  //       console.log("if no lasttile");
-  //       let neighbor = getNeighborTile(originalTile);
-  //       shootTile(playerGrid[neighbor]);
-  //     } else if (lastTile !== originalTile) {
-  //       console.log("not equal to last");
-  //       let neighbor = getNeighborTile(lastTile);
-  //       console.log(neighbor);
-  //       shootTile(playerGrid[neighbor]);
-  //     }
-  //   };
-  //   if (
-  //     currentPlayer === "computer" &&
-  //     playerGrid &&
-  //     computerGrid &&
-  //     computerShotReset &&
-  //     !computerShotSent
-  //   ) {
-  //     getRandomAxis();
-  //     shootTile(playerGrid[1]);
-  //     setOriginalTile(Number(playerGrid[1].id));
-  //     setComputerShotReset(false);
-  //     setTilesHitOnComputerTurn(0);
-  //   } else if (
-  //     currentPlayer === "computer" &&
-  //     playerGrid &&
-  //     computerGrid &&
-  //     !computerShotSent
-  //   ) {
-  //     console.log(lastShipMiss);
-  //     console.log(tileIsOnTheRightEdge(originalTile));
-  //     console.log(computerAxis);
-  //     if (
-  //       playerGrid &&
-  //       !updateComputerAxis &&
-  //       lastShipMiss &&
-  //       tileIsOnTheRightEdge(originalTile) &&
-  //       computerAxis === "horizontal"
-  //     ) {
-  //       reverseComputerShotAxis();
-  //       setUpdateComputerAxis(true);
-  //       console.log("update axis");
-  //     } else if (
-  //       (lastShipMiss &&
-  //         tileIsOnTheTopEdge(originalTile) &&
-  //         tileIsOnTheLeftEdge(originalTile)) ||
-  //       (tileIsOnTheTopEdge(originalTile) &&
-  //         tileIsOnTheRightEdge(originalTile)) ||
-  //       (tileIsOnTheBottomEdge(originalTile) &&
-  //         tileIsOnTheLeftEdge(originalTile)) ||
-  //       (tileIsOnTheBottomEdge(originalTile) &&
-  //         tileIsOnTheRightEdge(originalTile))
-  //     ) {
-  //       reverseComputerShotAxis();
-  //       setUpdateComputerAxis(true);
-  //     } else if (playerGrid && updateComputerAxis) {
-  //       nextShot();
-  //       console.log("updated axis confirmed");
-  //     } else if (
-  //       playerGrid &&
-  //       !updatedComputerShotDirectionForward &&
-  //       ((tileIsOnTheRightEdge(originalTile) &&
-  //         computerAxis === "horizontal") ||
-  //         tileIsOnTheBottomEdge(originalTile) ||
-  //         tileIsOnTheRightEdge(lastTile) ||
-  //         tileIsOnTheBottomEdge(lastTile))
-  //     ) {
-  //       reverseComputerShotDirection();
-  //       setUpdatedComputerShotDirectionForward(true);
-  //     } else if (
-  //       playerGrid &&
-  //       lastShipMiss &&
-  //       !updatedComputerShotDirectionForward
-  //     ) {
-  //       reverseComputerShotDirection();
-  //       setUpdatedComputerShotDirectionForward(true);
-  //     } else if (
-  //       playerGrid &&
-  //       lastShipMiss &&
-  //       updatedComputerShotDirectionForward
-  //     ) {
-  //       nextShot();
-  //     } else if (!computerShotSent) {
-  //       nextShot();
-  //     }
-  //     // } else if (lastShipMiss && !computerShotSent) {
-  //     //   shootRandomShip();
-  //     // }
-  //     // } else if (currentPlayer === "computer" && playerGrid && computerGrid) {
-  //     //   let neighborTile;
-  //     //   if (Number(originalTile.id + (1 % 10) === 0) && lastShipMiss) {
-  //     //     if (Number(originalTile.id) < 10) {
-  //     //     }
-  //     //   } else if (
-  //     //     currentPlayer === "computer" &&
-  //     //     lastShipHit &&
-  //     //     !computerShotSent &&
-  //     //     !lastShipMiss
-  //     //   ) {
-  //     //     console.log(lastTile.id);
-  //     //     console.log("computer 1");
-  //     //     if (!reverseShot) {
-  //     //       neighborTile = Number(lastTile.id) + 1;
-  //     //     } else {
-  //     //       neighborTile = Number(lastTile.id) - 1;
-  //     //     }
-
-  //     //     console.log(neighborTile);
-  //     //     shootTile(playerGrid[neighborTile]);
-  //     //   } else if (
-  //     //     currentPlayer === "computer" &&
-  //     //     lastShipHit &&
-  //     //     lastShipMiss &&
-  //     //     !computerShotSent
-  //     //   ) {
-  //     //     console.log("computer 2");
-  //     //     if (Number(lastTile.id + 1) % 1 === 0) {
-  //     //       neighborTile = Number(originalTile.id) + 10;
-  //     //     } else {
-  //     //       neighborTile = Number(originalTile.id) - 1;
-  //     //       console.log("changed neighbor");
-  //     //     }
-  //     //     console.log(neighborTile);
-  //     //     shootTile(playerGrid[neighborTile]);
-  //     //     setReverseShot(true);
-  //     //   } else if (
-  //     //     currentPlayer === "computer" &&
-  //     //     !computerShotSent &&
-  //     //     !originalTile
-  //     //   ) {
-  //     //     shootTile(playerGrid[0]);
-  //     //     setOriginalTile(playerGrid[0]);
-  //     //   }
-  //   }
-  // }, [
-  //   computerShotDirectionForward,
-  //   currentPlayer,
-  //   computerAxis,
-  //   updateComputerAxis,
-  //   lastTile,
-  //   lastShipHit,
-  //   lastShipMiss,
-  //   computerShotSent,
-  //   playerGrid,
-  //   computerGrid,
-  //   originalTile,
-  //   computerShotReset,
-  //   updatedComputerShotDirectionForward,
-  //   computerTilesToPickFromArray,
-  //   tilesHitOnComputerTurn,
-  // ]);
-
-  // React.useEffect(() => {
-  //   const lasTileIsOnTheRightEdge = (tile) => {
-  //     Number(tile.id);
-  //   };
-  //   const ShootRandomShip = () => {
-  //     let randomTile = getRandomTileComputer();
-  //     shootTile(playerGrid[randomTile]);
-  //     setOriginalTile(playerGrid[randomTile]);
-  //   };
-  //   const getRandomAxis = () => {
-  //     const axis = ["horizontal", "vertical"];
-  //     let randomAxis = axis[Math.floor(Math.random() * axis.length)];
-  //     return randomAxis;
-  //   };
-  //   if (currentPlayer === "computer" && playerGrid && computerGrid) {
-  //     let neighborTile;
-  //     if (Number(originalTile.id + (1 % 10) === 0) && lastShipMiss) {
-  //       if (Number(originalTile.id) < 10) {
-  //       }
-  //     }
-  //     if (
-  //       currentPlayer === "computer" &&
-  //       lastShipHit &&
-  //       !computerShotSent &&
-  //       !lastShipMiss
-  //     ) {
-  //       console.log(lastTile.id);
-  //       console.log("computer 1");
-  //       if (!reverseShot) {
-  //         neighborTile = Number(lastTile.id) + 1;
-  //       } else {
-  //         neighborTile = Number(lastTile.id) - 1;
-  //       }
-
-  //       console.log(neighborTile);
-  //       shootTile(playerGrid[neighborTile]);
-  //     } else if (
-  //       currentPlayer === "computer" &&
-  //       lastShipHit &&
-  //       lastShipMiss &&
-  //       !computerShotSent
-  //     ) {
-  //       console.log("computer 2");
-  //       if (Number(lastTile.id + 1) % 1 === 0) {
-  //         neighborTile = Number(originalTile.id) + 10;
-  //       } else {
-  //         neighborTile = Number(originalTile.id) - 1;
-  //         console.log("changed neighbor");
-  //       }
-  //       console.log(neighborTile);
-  //       shootTile(playerGrid[neighborTile]);
-  //       setReverseShot(true);
-  //     } else if (
-  //       currentPlayer === "computer" &&
-  //       !computerShotSent &&
-  //       !originalTile
-  //     ) {
-  //       shootTile(playerGrid[0]);
-  //       setOriginalTile(playerGrid[0]);
-  //     }
-  //   }
-  // }, [
-  //   currentPlayer,
-  //   lastTile,
-  //   lastShipHit,
-  //   lastShipMiss,
-  //   computerShotSent,
-  //   playerGrid,
-  //   computerGrid,
-  //   originalTile,
-  // ]);
-  // React.useEffect(() => {
-  //   if (selectedTile) {
-  //     console.log("selected ran");
-  //     shootTile(playerGrid[selectedTile]);
-  //   }
-  // }, [selectedTile]);
-  // React.useEffect(() => {
-  //   console.log(lastShipHit);
-  //   if (currentPlayer === "computer" && lastShipHit) {
-  //     const neighborTile = lastTile.id + 1;
-  //     shootTile(playerGrid[neighborTile]);
-  //   } else if (currentPlayer === "computer") {
-  //     console.log("computer shot");
-  //     let randomTile = getRandomTileComputer();
-  //     shootTile(randomTile);
-  //   }
-  // }, [currentPlayer, lastTile, lastShipHit]);
   React.useEffect(() => {
     const placeComputerDestroyer = () => {
       let randomAxis;
@@ -1334,7 +1160,7 @@ function App() {
       } else {
         x = 10;
       }
-      neighbor1 = position.id + x;
+      neighbor1 = Number(position.id) + x;
       if (checkIsShipPlaced("destroyer", randomAxis, position, neighbor1)) {
         placeComputerDestroyer("destroyer");
       } else {
@@ -1365,7 +1191,7 @@ function App() {
       } else {
         x = 10;
       }
-      neighbor1 = position.id + x;
+      neighbor1 = Number(position.id + x);
       neighbor2 = neighbor1 + x;
       if (
         checkIsShipPlaced(
@@ -1406,7 +1232,7 @@ function App() {
       } else {
         x = 10;
       }
-      neighbor1 = position.id + x;
+      neighbor1 = Number(position.id) + x;
       neighbor2 = neighbor1 + x;
       if (
         checkIsShipPlaced("cruiser", randomAxis, position, neighbor1, neighbor2)
@@ -1442,7 +1268,7 @@ function App() {
       } else {
         x = 10;
       }
-      neighbor1 = position.id + x;
+      neighbor1 = Number(position.id) + x;
       neighbor2 = neighbor1 + x;
       neighbor3 = neighbor2 + x;
       if (
@@ -1488,7 +1314,7 @@ function App() {
       } else {
         x = 10;
       }
-      neighbor1 = position.id + x;
+      neighbor1 = Number(position.id) + x;
       neighbor2 = neighbor1 + x;
       neighbor3 = neighbor2 + x;
       neighbor4 = neighbor3 + x;
@@ -1565,7 +1391,11 @@ function App() {
         isShot={tile.isShot}
         isMissed={tile.isMissed}
         id={tile.id}
-        onClick={playerShotSent ? null : () => shootTile(tile)}
+        onClick={
+          playerShotSent
+            ? null
+            : () => (winner === "none" ? shootTile(tile) : null)
+        }
       />
     ));
 
@@ -1574,11 +1404,20 @@ function App() {
       key={nanoid()}
       currentPlayer={currentPlayer}
       hitOrMiss={hitOrMiss}
+      destroyerTilesHit={destroyerTilesHit}
+      submarineTilesHit={submarineTilesHit}
+      cruiserTilesHit={cruiserTilesHit}
+      battleshipTilesHit={battleshipTilesHit}
+      carrierTilesHit={carrierTilesHit}
+      lastShipSunk={lastShipSunk}
+      winner={winner}
       onClick={() => {
         currentPlayer === "player"
           ? setPlayerShotSent(false)
           : setComputerShotSent(false);
         setShowHitPopUp(false);
+        setLastShotSunk(false);
+        setLastShipSunk("none");
         setDisplayGridUpdated(false);
         setHitOrMissDisplayGridUpdated(false);
         currentPlayer === "player"
@@ -1591,25 +1430,37 @@ function App() {
   return (
     <div className="main">
       <div className="left">
-        <img src={battleship} alt="battleship logo" className="bslogo" />
+        <div className="bslogo">BATTLESHIP</div>
         {!allShipsPlaced && (
-          <div className="ship-placement">
-            PLEASE PLACE YOUR
-            <span className="ship-placement-ship">
-              {" "}
-              {currentShip.toUpperCase()}
-            </span>
+          <div className="box">
+            {!allShipsPlaced && (
+              <div className="ship-placement">PLEASE PLACE YOUR</div>
+            )}
+            {!allShipsPlaced && (
+              <div className="ship-placement current">{currentShip}</div>
+            )}
+            {!allShipsPlaced && (
+              <button onClick={() => switchAxis()} className="axisbutton">
+                Switch Axis
+              </button>
+            )}
           </div>
         )}
-        {showHitPopUp
-          ? playerHitPopUpElements
-          : startGame &&
-            currentPlayer === "player" && (
-              <div className="choosetile">PLEASE SELECT A TARGET TO SHOOT</div>
-            )}
+        {startGame && (
+          <div className="target-box">
+            {showHitPopUp
+              ? playerHitPopUpElements
+              : startGame &&
+                currentPlayer === "player" && (
+                  <div className="choosetile">
+                    PLEASE SELECT A TARGET TO SHOOT
+                  </div>
+                )}{" "}
+          </div>
+        )}
         {!startGame && allShipsPlaced && (
           <button
-            className="startGame"
+            className="startgame"
             onClick={() => {
               setStartGame(true);
             }}
@@ -1623,11 +1474,6 @@ function App() {
             onClick={() => resetPlayerShips()}
           >
             RESET SHIPS
-          </button>
-        )}
-        {!allShipsPlaced && (
-          <button onClick={() => switchAxis()} className="axisbutton">
-            Switch Axis
           </button>
         )}
       </div>

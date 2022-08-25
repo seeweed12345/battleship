@@ -1,26 +1,48 @@
 @font-face {font-family: "ITC Machine"; src: url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.eot"); src: url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.eot?#iefix") format("embedded-opentype"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.woff2") format("woff2"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.woff") format("woff"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.ttf") format("truetype"), url("//db.onlinewebfonts.com/t/69bed3a8aa634e734859ad564c6fd73c.svg#ITC Machine") format("svg"); }
+
+body {
+  background-image:  linear-gradient(#dddddd 1px, transparent 1px), linear-gradient(to right, #dddddd 1px, #ffffff 1px) ;
+  background-size: 20px 20px;
+}
 .main {
-  background-color: rgb(45, 45, 119);
-  height: 100vh;
+  height: 600px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 70% 30%;
   font-family: "ITC Machine";
 }
 
 
+
 .bslogo {
-  width: 500px;
-  margin-top: 20px;
+  font-size: 100px;
+  padding-top: 20px;
+  padding-left: 5px;
 }
 .left {
   display: flex;
   flex-direction: column;
-  padding-left: 200px;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-content: center;
+  width: 500px;
+  margin-left: 90px;
 }
 
 .axisbutton {
-  margin-top: 50px;
   width: 100px;
+  margin-top: 50px;
+  font-size: 30px;
+  width: 200px;
+  border: 2px dashed black;
+  color: black;
+  background-color: rgb(255, 255, 255);
+  font-family: "ITC Machine";
+
+}
+
+.axisbutton:hover {
+  background-color: rgb(41, 41, 41);
+  cursor: pointer;
 }
 
 .start-game {
@@ -35,24 +57,25 @@
 
 
 .gridcontainer {
-  padding-left: 50px;
-  margin-top: 24%;
+  padding-left: 30px;
   display: grid;
   grid-template-rows: repeat(10, 1fr);
   grid-template-columns: repeat(10, 1fr);
   width: 500px;
   height: 500px;
+  padding-bottom: 100px;
+}
+.ship-placement.current {
+  font-size: 50px;
+  color: red;
 }
 
-.tileface:hover {
-  border: 2px solid rgb(255, 255, 255)100vh;
-}
 
 .tileface {
   height: 50px;
   width: 50px;
-  background-color: rgb(23, 153, 185);
-  border: 1px solid rgb(45, 45, 119);
+  background-color: rgb(255, 255, 255);
+  border: 2px solid rgb(0, 0, 0);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -72,19 +95,150 @@
   background-color: rgb(68, 68, 68);
 }
 
+.robot {
+  padding-top: 30px;
+  padding-bottom: 30px;
+  font-size: 30px;
+}
+
 .ship-placement {
-  padding-top: 50px;
-  font-size: 80px;
-  color: white;
+  font-size: 30px;
+  color: rgb(0, 0, 0);
+
+}
+
+.box {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  align-items: center;
+  margin-left: 50px;
 }
 
 .choosetile {
-  padding-top: 50px;
-  font-size: 80px;
-  color: white;
+  padding-top: 40px;
+  font-size: 30px;
+  color: rgb(0, 0, 0);
+}
+.target-box {
+  width: 400px;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 30px;
+}
+.won {
+  color: red;
+}
+.nofather {
+  font-size: 20px;
+  
+
+}
+span.loser {
+  color: red;
+}
+.destroyedShips {
+  padding-top: 20px;
+  font-size: 20px;
+  color: rgb(0, 0, 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.goodwork {
+  font-size: 30px;
+}
+.gameover {
+  color: red;
+  font-size: 60px;
+  margin-top: -30px;
+}
+
+button.red {
+  background-color: rgb(223, 27, 27);
+}
+
+button.yellow {
+  background-color: rgb(211, 211, 22);
 }
 
 .ship-placement-ship {
   color: rgb(194, 0, 0);
 }
+
+div.yellow {
+  color:rgb(0, 0, 0);
+  font-size: 40px;
+}
+
+div.red {
+  color: rgb(0, 0, 0);
+  font-size: 40px;
+}
+
+.destroyedShips button {
+  margin-top: 20px;
+  font-size: 30px;
+  width: 150px;
+  color: white;
+  border-radius: 10px;
+  font-family: "ITC Machine"
+}
+
+button.yellow:hover {
+  background-color: rgb(241, 241, 19);
+  cursor: pointer;
+}
+
+button.red:hover {
+  background-color: rgb(255, 0, 0);
+  cursor: pointer;
+}
+
+.startgame {
+  font-size: 30px;
+  width: 200px;
+  color: white;
+  border-radius: 10px;
+  font-family: "ITC Machine";
+  background-color: rgb(0, 0, 0);
+  margin-left: 100px;
+  margin-top: 40px;
+}
+
+.resetplayerships {
+  margin-top: 50px;
+  font-size: 30px;
+  width: 200px;
+  color: white;
+  border-radius: 10px;
+  font-family: "ITC Machine";
+  background-color: rgb(0, 0, 0);
+  margin-left: 100px;
+}
+
+.startgame:hover {
+  background-color: rgb(58, 58, 58);
+  cursor: pointer;
+}
+
+.resetplayerships:hover {
+  background-color: rgb(58, 58, 58);
+  cursor: pointer;
+}
+
+.restart {
+  background-color: black;
+}
+
+.restart:hover {
+  background-color: rgb(58, 58, 58);
+  cursor: pointer;
+
+}
+
+
 
